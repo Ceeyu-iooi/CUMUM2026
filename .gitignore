@@ -9,7 +9,8 @@
 *.toc
 *.lof
 *.lot
-main.pdf
+*.bbl
+*.blg
 
 # Python/cache
 __pycache__/
@@ -22,7 +23,7 @@ Thumbs.db
 .idea/
 
 # Submission staging
-submission/
+#submission/
 
 # AI detail is generated only if AI was actually used
-support/AI工具使用详情.pdf
+#support/AI工具使用详情.pdf
