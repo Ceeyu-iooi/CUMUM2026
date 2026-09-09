@@ -1,0 +1,4 @@
+Python >= 3.10
+Recommended: Python 3.11 or 3.12
+Install dependencies with: pip install -r requirements.txt
+Run example entry point with: python code/main.py

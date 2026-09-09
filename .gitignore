@@ -1,0 +1,28 @@
+# LaTeX build
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.xdv
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+main.pdf
+
+# Python/cache
+__pycache__/
+*.py[cod]
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Submission staging
+submission/
+
+# AI detail is generated only if AI was actually used
+support/AI工具使用详情.pdf

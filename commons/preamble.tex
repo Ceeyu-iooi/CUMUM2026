@@ -1,0 +1,22 @@
+% ============================================================
+% 用户导言区：自己的宏、额外宏包统一放这里。
+% 不建议修改 cumcm2026.cls，避免比赛中误伤版式。
+% ============================================================
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+
+% ============================================================
+% BibTeX 参考文献管理（移植自 latex 模板）
+% ------------------------------------------------------------
+% 使用方法：
+%   1. 全部真实文献统一维护在项目根目录的 ref.bib 中；
+%   2. 正文中用 \cite{key} / \citep{key} / \citet{key} 引用；
+%   3. 引用样式由根目录 gbt7714-numerical.bst 控制（GB/T 7714 数字式）。
+% 编译：latexmk 会自动按 xelatex→bibtex→xelatex×2 的顺序处理；
+% 手动则执行：xelatex main && bibtex main && xelatex main && xelatex main。
+% ============================================================
+\usepackage[numbers,sort&compress]{natbib}
+% 让“参考文献”继续作为带编号的正文小节（与 cumcm2026.cls 的章节风格一致）
+\renewcommand{\bibsection}{\section{\refname}}

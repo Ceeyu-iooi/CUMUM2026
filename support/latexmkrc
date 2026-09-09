@@ -1,0 +1,4 @@
+$pdf_mode = 5;
+$xelatex = 'xelatex -file-line-error -halt-on-error -interaction=nonstopmode %O %S';
+$xdvipdfmx = 'xdvipdfmx -V 4 -E -o %D %O %S';
+$clean_ext = 'synctex.gz aux fdb_latexmk fls log out xdv';

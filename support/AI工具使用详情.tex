@@ -1,0 +1,57 @@
+% 仅在竞赛过程中实际使用 AI 工具时填写、编译并提交。
+% 正式文件名必须为：AI工具使用详情.pdf
+\documentclass[UTF8,a4paper,11pt,fontset=none]{ctexart}
+\usepackage{fontspec}
+\usepackage[left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm]{geometry}
+\usepackage{booktabs,tabularx,longtable,array,enumitem,hyperref}
+\IfFontExistsTF{Noto Serif CJK SC}{%
+  \setCJKmainfont{Noto Serif CJK SC}[BoldFont=Noto Serif CJK SC Bold]
+  \setCJKsansfont{Noto Sans CJK SC}[BoldFont=Noto Sans CJK SC Bold]
+}{%
+  \setCJKmainfont{FandolSong-Regular.otf}[BoldFont=FandolSong-Bold.otf]
+  \setCJKsansfont{FandolHei-Regular.otf}[BoldFont=FandolHei-Bold.otf]
+}
+\hypersetup{hidelinks,pdfauthor={},pdftitle={AI工具使用详情}}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
+\linespread{1.25}
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\title{AI工具使用详情}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{所用 AI 工具}
+\begin{longtable}{p{0.23\textwidth}p{0.67\textwidth}}
+\toprule
+项目 & 填写内容 \\
+\midrule
+工具名称 & 【填写实际工具名称】 \\
+版本或型号 & 【填写实际版本、模型名称或可识别型号】 \\
+使用日期 & 【YYYY-MM-DD 至 YYYY-MM-DD】 \\
+\bottomrule
+\end{longtable}
+
+\section{具体使用目的和环节}
+【逐项写明在哪些环节使用，例如语言润色、代码调试、信息整理等。不要只写“辅助论文”。】
+
+\section{主要提示方式与使用过程}
+【概括主要提示方式、迭代过程；需要时附典型交互示例。不得出现参赛者姓名、学校、赛区等身份信息。】
+
+\section{采纳、人工修改与核验}
+【除单纯语言润色外，逐项说明 AI 输出是否采纳、进行了哪些人工修改，以及如何用数据、程序、推导或实验进行核验。】
+
+\section{最终核验清单}
+\begin{enumerate}[label=\arabic*)]
+  \item 公式推导、单位、边界条件和符号已人工核对；
+  \item 所有实际使用的程序已在独立环境中运行并复现论文结果；
+  \item 引用、数据来源和事实陈述已人工核验；
+  \item 核心建模与分析由参赛队主导；
+  \item 论文中的 AI 工具使用声明与本文件一致。
+\end{enumerate}
+
+\end{document}
