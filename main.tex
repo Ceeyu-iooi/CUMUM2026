@@ -50,7 +50,7 @@
 在实际运行中，小区负载和光伏出力具有明显的时段变化特征，外部电网电价也可能保持固定曲线或发生实时波动。若仅依据当前状态进行购电，容易错失低价充电和高价放电机会；若储能调度不当，还可能造成过充、过放、跨日状态中断或紧急购电费用增加。因此，需要根据负载、光伏、电价和储能状态等数据，在连续时间尺度上制定购电量和充放电量，使微网在满足供电要求的同时获得经济、可行且稳定的调度方案。
 
 % ---- 参考文献引用示例（BibTeX 用法）：写作时把用到的文献 key 填进 \cite{...}，条目统一写进根目录 ref.bib 即可 ----
-本文在建模中将参考数学建模专著\cite{司守奎2011数学建模算法与应用}、MATLAB 建模工具书\cite{卓金武2011MATLAB}以及多准则评价方法综述\cite{behzadian2012topsis}等文献，后续各模型所用方法均按此方式标注引用。
+%本文在建模中将参考数学建模专著\cite{司守奎2011数学建模算法与应用}、MATLAB 建模工具书\cite{卓金武2011MATLAB}以及多准则评价方法综述\cite{behzadian2012topsis}等文献，后续各模型所用方法均按此方式标注引用。
 
 \subsection{基本问题}
 在实际运行中，小区负载和光伏功率具有明显的时段变化特征，外部电网电价也可能发生实时波动。为逐步优化多动态因素下微网购电量方案，题目循序渐进地给出四个小问题和相关的约束条件。附录1给出了储能设备的相关约束条件：储能设备的最大容量为12000 kWh，最大充放电功率为5000 kW，2025年1月1日0:00的初始储电量为6000 kWh。为避免过度充电或放电，储能运行过程中的储电量必须保持在1200至10800 kWh之间，充放电效率均为90\%。各时段还需满足功率平衡、充放电功率上限和储能状态递推约束。微网提供的电能不得低于小区负载；在储能状态需要跨日延续时，下一日0:00的储电量应与前一日24:00的储电量保持一致。
@@ -65,13 +65,14 @@
 3.基于问题二的固定的电价和小区负载，考虑附件3中光伏发电功率和附件3中各时间段未来24小时光伏功率预测数据，结合紧急购电规则和计划-调整规则建立数学模型，得出全每天0:00的最优计划购电方案和在其他预报时刻的最优调整购电方案。
 
 4.在问题二和三的基础上，考虑电价的实时波动，改进优化模型，重新计算问题二和三，分别给出全年最优购电量方案。
-\begin{enumerate}[label=\textbf{问题\arabic*：}]
-  \item 根据已知数据，分析【对象A】与【指标B】之间的关系，并建立模型得到【目标结果】；
-  \item 在问题一的基础上考虑【新增因素/约束】，求得【预测结果、评价结果或最优方案】；
-  \item 针对【更复杂情形】，建立综合模型，并对结果的稳定性和实际意义进行分析。
-\end{enumerate}
+
 
 % ============================================================
+%\begin{enumerate}[label=\textbf{问题\arabic*：}]
+ % \item 根据已知数据，分析【对象A】与【指标B】之间的关系，并建立模型得到【目标结果】；
+  %\item 在问题一的基础上考虑【新增因素/约束】，求得【预测结果、评价结果或最优方案】；
+  %\item 针对【更复杂情形】，建立综合模型，并对结果的稳定性和实际意义进行分析。
+%\end{enumerate}
 % 二、问题分析
 % ============================================================
 \section{问题分析}
@@ -105,21 +106,34 @@
 \section{符号说明}
 为便于后文表述，定义主要符号如\cref{tab:symbols}所示。只建议列高频核心符号，临时变量可在首次出现时说明。
 
+
+% 导言区需添加：
+% \usepackage{booktabs}
+
 \begin{table}[htbp]
   \centering
-  \caption{主要符号及含义}
-  \label{tab:symbols}
-  \begin{tabularx}{0.90\textwidth}{cXc}
+  \caption{问题一模型符号说明}
+  \label{tab:q1_symbols}
+  \begin{tabular}{@{}llll@{}}
     \toprule
-    符号 & 含义 & 单位 \\
+    符号 & 类型 & 含义 & 单位 \\
     \midrule
-    $x_i$ & 第 $i$ 个样本的【特征/决策变量】 & 【单位】 \\
-    $y_i$ & 第 $i$ 个样本的【观测值/目标变量】 & 【单位】 \\
-    $w_j$ & 第 $j$ 个指标的权重 & -- \\
-    $n$ & 样本总数 & -- \\
-    $F(\bm{x})$ & 优化模型目标函数 & -- \\
+
+    $\rho_t$ & 已知参数 & 第 $t$ 时段外网电价 & 元/kWh \\
+    $L_t$ & 已知参数 & 第 $t$ 时段负载电量 & kWh \\
+    $R_t$ & 已知参数 & 第 $t$ 时段光伏预测电量 & kWh \\
+    $g_t$ & 决策变量 & 从外网购买的计划电量 & kWh \\
+    $c_t$ & 决策变量 & 从母线送入储能的充电量 & kWh \\
+    $r_t$ & 决策变量 & 储能向母线释放的放电量 & kWh \\
+    $q_t$ & 决策变量 & 未被利用的光伏或富余电量 & kWh \\
+    $S_t$ & 中间变量 & 第 $t$ 时段开始时的储电量 & kWh \\
+    $u_t$ & 决策变量 & 第 $t$ 时段充放电模式 & 0或1 \\
+    $\eta_c,\eta_d$ & 待校准参数 & 充电效率和放电效率 & 无量纲 \\
+    $C_1$ & 目标变量 & 全天购电费用 & 元 \\
+    $Q$ & 目标变量 & 全天弃电量 & kWh \\
+    $H$ & 目标变量 & 全天储能吞吐量 & kWh \\
     \bottomrule
-  \end{tabularx}
+  \end{tabular}
 \end{table}
 
 % ============================================================
@@ -144,18 +158,209 @@
 % ============================================================
 % 六、模型建立与求解
 % ============================================================
-\section{模型建立与求解}
+\section{问题一的模型建立与求解}
+
+问题一给定一天内的分时电价、负载功率和光伏预测功率，要求在每天 0:00 一次性制定全天计划购电量和储能充放电量。
+问题一要求根据附件1中的144个10分钟时段数据，在每天0:00一次性制定全天计划购电量和储能充放电量。微网提供的电能不得低于小区负载，储能设备在0:00和24:00的储电量必须相同。最终需要给出指定时段购电量、全天购电量与购电费，指定4小时区间的充放电量，以及两端储电量。
+
+问题一的决策变量和约束均为线性形式，唯一需要离散化的是充放电模式。采用混合整数线性规划（MILP）可以精确描述能量守恒、SOC递推、功率上限和不允同时充放电等约束，并可在给定容差内获得全局最优解。
+
+该问题的直接目标是购电费最小化，隐含目标则是建立后续问题可以复用的物理内核。其关键矛盾主要有四点。第一，购电量与储能充放电量相互耦合，若只建立“供电不低于负载”的不等式，会在光伏富余时留下没有明确去向的电量。第二，峰谷电价差虽然提供了套利空间，但每次充放电都会产生效率损失，只有在价差足以覆盖循环损耗时才应进行外网套利。第三，储能受容量、功率、SOC安全和充放电互斥约束，局部低价充电可能在后续形成过充或无法回收初始电量。第四，24:00将SOC强制恢复到6000 kWh，避免模型把初始储电量当作免费资源而在日末放空电池。
 
 \subsection{问题一模型的建立}
-【示例】设目标变量为 $y$，影响因素为 $x_1,x_2,\ldots,x_p$。若采用多元线性回归，可建立
+\subsubsection{确定决策变量}
+
+为了使满足负载需求和全天购电成本最小的调度任务，我们给定模型的决策变量为144个时间段中为第$t$个时段计划从外网购买的电量$g_t$，储能设备的第$t$个时段的充电量$c_t$、放电量$r_t$和储能充电模式$u_t$，$q_t$为第$t$个时段负载或储能设备未利用的电量，其中$u_t$定义为0-1变量，$u_t=1$表示充电模式，$u_t=0$表示放电模式。
+
+
+
+
+\subsubsection{确定目标函数}
+
+问题一以全天购电费最小为优化目标，我们确定目标函数为最小化全天购电费
+
 \begin{equation}
-  y=\beta_0+\sum_{j=1}^{p}\beta_j x_j+\varepsilon,
-  \label{eq:q1-model}
+  \min C_1=\sum_{t=1}^{144}\rho_t g_t
 \end{equation}
-其中 $\beta_j$ 为待估参数，$\varepsilon$ 为随机误差项。若实际数据呈明显非线性，则应将本示例替换为更合适的模型。
+
+其中$\rho_t$为第$t$个时段的外网电价。在费用不超过最优值小容差的可行解中，进一步最小化未利用电量：
+
+\begin{equation}
+  \min Q=\sum_{t=1}^{144}q_t,\quad \mathrm{s.t.}\ \sum_{t=1}^{144}\rho_t g_t\leq C_1^*+\varepsilon_C.
+\end{equation}
+
+\subsubsection{约束条件}
+
+\noindent{(1)母线供需侧平衡约束：}
+
+在一段时间内，微网母线的输入输出功率应满足一定的守恒关系，根据外网购电、光伏电量和储能放电的平衡，我们构建外网购买的电量、光伏发电量、储能放电量之和与负载电量、储能充电两、光伏未利用电量或外网剩余电量的能量约束条件，在这一关系下，满足了微网电能不可低于小区负载的重要约束，富余的的能量去向也得到了规范和保证：
+
+\begin{equation}
+  g_t+R_t+r_t=L_t+c_t+q_t,\quad t\in T
+\label{pingheng}
+\end{equation}
+
+\noindent{(2)储能设备SOC约束：}
+
+为得到储能设备在t时段的储电状态（SOC）$S_t$，我们定义储能设备充电时充入有效电量为$\eta_cc_t$，放电时，为了向母线提供$r_t$，储能内部需要消耗$r_t/\eta_d$,其中充放电效率为$\eta_c$和$\eta_d$均为90\%,由此得递推关系：
+
+\begin{equation}
+  S_{t+1}=S_t+\eta_c c_t-\frac{r_t}{\eta_d},\quad t\in T.
+\end{equation}
+
+
+问题一储能设备在0:00和24:00的储电量相同，均为6000kWh。同时为了满足充放电的安全要求，在后继的充放电过程中，储能设备的电量必须保持在1200-10800kWh之间：
+$$
+  1200\leq S_t\leq10800,\quad t=1,\ldots,145.
+  S_1=6000,\quad S_{145}=6000.
+$$
+
+储能设备最大充放电功率为5000kW，因此单个10分钟时段的最大充放电量为
+$$
+C_{\max}=D_{\max}=5000\times\frac{1}{6}=833.333\ \mathrm{kWh}.
+$$
+由于同一时段充放电不能同时进行，储能模式0-1变量$u_t$和充放电量$c_t$、$r_t$满足互斥的约束：
+
+$$
+  0\leq c_t\leq833.333u_t,\quad 0\leq r_t\leq833.333(1-u_t).
+  \label{eq:q1-model}
+$$
+
+\subsubsection{优化模型汇总}
+式\eqref{eq:q1_model_system}为问题一的混合整数线性规划模型：
+% 导言区需有：
+% \usepackage{amsmath}
+
+\begin{equation}
+\left\{
+\begin{aligned}
+\min C_1 &= \sum_{t=1}^{144}\rho_t g_t,
+\quad \min Q=\sum_{t=1}^{144}q_t,
+\quad \min H=\sum_{t=1}^{144}(c_t+r_t), \\
+\quad\quad\mkern-8mu\mathrm{s.t.}\ 
+&\sum_{t=1}^{144}\rho_t g_t\leq C_1^*+\varepsilon_C,\\
+&\sum_{t=1}^{144}q_t \leq Q^*+\varepsilon_Q, \\
+&g_t+R_t+r_t = L_t+c_t+q_t,\quad t\in T, \\
+&g_t \geq 0,\quad c_t\geq 0,\quad r_t\geq 0,\quad q_t\geq 0, \\
+& S_{t+1} = S_t+\eta_c c_t-\frac{r_t}{\eta_d},\quad t\in T, \\
+&\eta_c = \eta_d=0.9, \\
+&1200 \leq S_t\leq10800,\quad t=1,\ldots,145, \\
+&S_1 = 6000,\quad S_{145}=6000, \\
+&0 \leq c_t\leq833.333u_t,
+\quad 0\leq r_t\leq833.333(1-u_t).
+\end{aligned}
+\right.
+\label{eq:q1_model_system}
+\end{equation}
+
+
 
 \subsection{问题一模型的求解与结果}
-利用【Python/MATLAB/R】对模型进行求解，得到关键指标如\cref{tab:q1-result}所示。
+
+\subsubsection{最优购电方案求解}
+我们按$[g_t,c_t,r_t,q_t,S_t,u_t]$的变量顺序建立865维决策向量，根据式\eqref{eq:q1_model_system}调用SciPy的稀疏矩阵接口构造由288个等式约束、288个不等式约束及相应变量边界构成的约束矩阵。第一级以全天购电费为目标，求解混合整数线性规划模型。如表\ref{tab:q1-result}得到一级最优购电费$C_1^*=35126.95$ 元,全天计划购电量为59482.70 kWh。
+
+
+% Please add the following required packages to your document preamble:
+% \usepackage{booktabs}
+\begin{table}[H]
+
+\caption{微网在指定时间段的购电量及全天的购电量和购电费}
+\label{tab:q1-result}
+\begin{tabular}{@{}cccccc@{}}
+\toprule
+\textbf{时间段} & \textbf{购电量/kWh} & \textbf{时间段} & \textbf{购电量/kWh} & \textbf{时间段} & \textbf{购电量/kWh} \\ \midrule
+10:00-10:10  & 0.0000           & 12:00-12:10  & 486.40         & 14:00-14:10  & 0.0000           \\
+16:00-16:10  & 394.93         & 18:00-18:10  & 636.98         & 20:00-20:10  & 0.0000           \\
+\multicolumn{2}{c}{全天购电量}       & 59482.70   & \multicolumn{2}{c}{全天购电费}       & 35126.95元      \\ \bottomrule
+\end{tabular}
+\end{table}
+
+% Please add the following required packages to your document preamble:
+% \usepackage{booktabs}
+\begin{table}[htbp]
+\caption{储能设备在指定时间段的充放电量及0:00和24:00储电量}
+\label{tab:q1-storage}
+\begin{tabular}{@{}cccccc@{}}
+\toprule
+\textbf{时间段} & \textbf{充电量/kWh} & \textbf{放电量/kWh} & \textbf{时间段} & \textbf{充电量/kWh} & \textbf{放电量/kWh} \\ \midrule
+0:00-4:00    & 4500.0000        & 0.0000           & 12:00-16:00  & 5286.0352        & 91.1014          \\
+4:00-8:00    & 833.3333         & 6365.8412        & 16:00-20:00  & 0.0000           & 5780.1319        \\
+8:00-12:00   & 4787.9642        & 1702.9970        & 20:00-24:00  & 5333.3333        & 2859.8681        \\
+\multicolumn{2}{c}{0:00储电量}     & 6000.0000        & \multicolumn{2}{c}{24:00储电量}    & 6000.0000        \\ \bottomrule
+\end{tabular}
+\end{table}
+
+
+结合表\ref{tab:q1-storage}调度结果，综合来看，计划购电量在凌晨和深夜低电价时段较大，在中午光伏发电量较大时明显减小，在傍晚和晚高峰则主要依靠储能设备放电或购买较高价的外网电量。该结构与净负荷和分时电价的同步变化一致。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[
+    width=0.8\textwidth,
+    height=0.5\textheight,
+    keepaspectratio
+  ]{figs/图2_储能充放电与SOC.png}
+  \caption{储能设备充放电与SOC变化曲线}
+  \label{fig:storage-charging}
+\end{figure}
+
+为了更明显地体现微网-外网调控过程中，微网母线输入侧（微网购电、光伏发电、储能放电）和输出侧（小区负载、储能充电、未利用电量）的供需平衡约束关系,我们将购电方案供需两侧的结果呈现如图\ref{fig:power-balance}，可以直观看出最优购电方案整体表现了购电量随电价、负载与光伏发电量的动态调整，母线输入和输出功率上下对称包络，最大偏差仅$1.8\times10^{-12}$kW,基本严格守恒，更具象地印证了式\eqref{pingheng}中的供需约束。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[
+    width=0.9\textwidth,
+    height=0.7\textheight,
+    keepaspectratio
+  ]{figs/图1_功率平衡.png}
+  \caption{最优购电方案电力供需堆叠图}
+  \label{fig:power-balance}
+\end{figure}
+
+
+\subsubsection{微网储能经济效益分析}
+
+为体现问题一中储能设备的经济贡献并进行量化，我们建立无储能情况下的基准$
+c_t=r_t=0,S_t=6000$KWh，此时各个时段的购电量和未利用电量分别为：
+$$
+g_t^{(0)}=\max(L_t-R_t,0),\quad q_t^{(0)}=\max(R_t-L_t,0)
+$$
+
+结合储能方案下的最优购电费$C_1^*$,则可以计算储能方案相比无储能情况费用下降率和光伏利用率：
+\begin{equation}
+  \eta_C=\frac{\sum_{t=1}^{144}\rho_t g_t^{(0)}-C_1^*}{\sum_{t=1}^{144}\rho_t g_t^{(0)}}\times100\%,\quad \eta_{PV}=1-\frac{\sum_tq_t}{\sum_tR_t}.
+\end{equation}
+
+我们以无储能方案作为经济性评价基准，两这种方案的对比结果如图\ref{fig:cumulative-cost}所示。储能方案相比无储能方案全天费用净节省了12925.10元，费用下降率约为$26.9\%$，说明储能设备在的微网购电调度中带来了较为明显的经济效益。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[
+    width=0.6\textwidth,
+    height=0.5\textheight,
+    keepaspectratio
+  ]{图3\_累计购电费用对比.png}
+  \caption{最优购电储能方案与无储能方案的累计购电费用对比}
+  \label{fig:cumulative-cost}
+\end{figure}
+
+
+
+
+
+% \begin{figure}[H] 
+% \caption{KMDR Simulation Analysis Results} 
+% \label{fig_propagation_analysis}\centering
+% \begin{subfigure}{0.4\textwidth}
+% \includegraphics[width=0.9\textwidth]{fig_simulation_champions.png}
+% \caption{KMDR Champion Quality Analysis} \label{fig_champion_quality}
+% \end{subfigure}\begin{subfigure}{0.4\textwidth}
+% \includegraphics[width=0.9\textwidth]{fig_simulation_elimination.png}
+% \caption{KMDR Early Elimination Rationality Analysis} \label{fig_elimination_rationality}
+% \end{subfigure}\\
+
+% \end{figure}
 
 \begin{table}[htbp]
   \centering
