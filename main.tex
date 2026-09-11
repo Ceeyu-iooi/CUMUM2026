@@ -94,10 +94,12 @@
 \section{模型假设}
 根据题意并结合实际情况，作如下合理假设。正式论文中只保留真正服务于模型的假设。
 \begin{enumerate}[label=\textbf{假设\arabic*：}]
-  \item 题目所给数据真实可靠，除已识别异常值外不存在系统性记录错误；
-  \item 在研究时间范围内，题目未明确考虑的外部环境因素保持相对稳定；
-  \item 同一指标采用统一统计口径，不同样本之间具有可比性；
-  \item 优化模型中的所有决策变量均满足题目给出的实际可行域约束。
+  % \item 题目所给数据真实可靠，除已识别异常值外不存在系统性记录错误；
+  % \item 在研究时间范围内，题目未明确考虑的外部环境因素保持相对稳定；
+  % \item 同一指标采用统一统计口径，不同样本之间具有可比性；
+  % \item 优化模型中的所有决策变量均满足题目给出的实际可行域约束。
+  \item 紧急购电只用于补足当前的负载缺口，不用于为储能充电；储能充放电效率均取 0.9。
+  \item 储能忽略自放电、温度效应、启停时间和循环退化成本，SOC 在正式输出期内跨日连续。
 \end{enumerate}
 
 % ============================================================
@@ -292,7 +294,7 @@ $$
 \end{table}
 
 
-结合表\ref{tab:q1-storage}调度结果，综合来看，计划购电量在凌晨和深夜低电价时段较大，在中午光伏发电量较大时明显减小，在傍晚和晚高峰则主要依靠储能设备放电或购买较高价的外网电量。该结构与净负荷和分时电价的同步变化一致。
+结合表\ref{tab:q1-storage}调度结果，综合来看，计划购电量在凌晨和深夜低电价时段较大，在中午光伏发电量较大时明显减小，在傍晚和晚高峰则主要依靠储能设备放电或购买较高价的外网电量。该结构与净负荷和分时电价的同步变化一致。如图\ref{fig:storage-charging}所示，储能设备在低电价和中午光伏发电量充足情况下充电，在高电价且光伏发电量尚不能满足小区负载放电，SOC在1200~10800kWh的安全范围内波动，且一天首末的荷电状态相同，完成储能设备充放电的日循环。
 
 \begin{figure}[H]
   \centering
@@ -362,51 +364,199 @@ $$
 
 % \end{figure}
 
-\begin{table}[htbp]
-  \centering
-  \caption{问题一结果示例}
-  \label{tab:q1-result}
-  \begin{tabular}{cccc}
-    \toprule
-    指标 & 方案1 & 方案2 & 方案3 \\
-    \midrule
-    【指标A】 & 0.82 & 0.76 & 0.91 \\
-    【指标B】 & 12.4 & 10.8 & 13.1 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+% \begin{table}[htbp]
+%   \centering
+%   \caption{问题一结果示例}
+%   \label{tab:q1-result}
+%   \begin{tabular}{cccc}
+%     \toprule
+%     指标 & 方案1 & 方案2 & 方案3 \\
+%     \midrule
+%     【指标A】 & 0.82 & 0.76 & 0.91 \\
+%     【指标B】 & 12.4 & 10.8 & 13.1 \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
 
-所有论文图片统一放在 \texttt{figs/} 文件夹。插图示例如\cref{fig:example-result}。
-\begin{figure}[htbp]
+% 所有论文图片统一放在 \texttt{figs/} 文件夹。插图示例如\cref{fig:example-result}。
+% \begin{figure}[htbp]
+%   \centering
+%   \includegraphics[width=0.74\textwidth]{example_result.pdf}
+%   \caption{模型结果示例图（正式提交时替换）}
+%   \label{fig:example-result}
+% \end{figure}
+
+% 【结果分析示例】可以看出，随着【变量】增加，【指标】总体呈【上升/下降】趋势，并在【区间】附近趋于稳定。该规律与【实际机制】一致，说明模型能够较好地描述变量之间的关系。
+
+% \subsection{问题二模型的建立与求解}
+% 【示例】在问题一基础上加入资源总量约束。若目标是最小化总成本，可写为
+% \begin{equation}
+%   \min_{\bm{x}} F(\bm{x})=\sum_{i=1}^{n} c_i x_i,
+%   \quad
+%   \text{s.t.}\quad
+%   \begin{cases}
+%     \sum_{i=1}^{n} a_i x_i \geq b,\\
+%     0\leq x_i\leq u_i,\quad i=1,2,\ldots,n.
+%   \end{cases}
+%   \label{eq:q2-model}
+% \end{equation}
+% 采用【线性规划/整数规划/遗传算法/粒子群算法】求解，得到最优目标值为【结果】，对应决策方案为【方案】。
+
+\section{问题二模型的建立与求解}
+问题二引进了小区负载和光伏功率的随时间变化的实际数值，相对于问题一单日购电方案的调优，问题二需要在全年的范围内指定每天0:00的购电方案。这种变化带来的挑战在于，在0:00制定当天的购电方案时，我们只能基于已有的负载和光伏功率的历史数据，预测未来一段时间内负载和光伏功率。此外，储能设备的荷电状态SOC在当天144时段结束后直接成为次日初始储能，取消了单日强制闭合的限制，为此，我们需要构建跨日全年连续递推SOC运行模型作为方案调优的基础变量。
+
+在这两重不确定性的基础上，当某天预测的负载和光伏功率出现偏差，导致微网母线供不应求时，需要支付实时电价5倍的紧急购电费用。为了权衡预测偏差带来的风险和购电量的经济成本，我们在建立负荷与光伏因果预测模型的基础上，综合考虑紧急购电费的风险惩罚机制构建优化模型，以得到全年每日最优购电量方案。
+\subsection{负荷与光伏因果预测模型}
+
+\subsubsection{梯度提升回归预测和历史联合误差分析}
+
+建立预测模型时，为从源头上隔绝未来数据的泄露，我们以日内与年内正余弦、星期和周末、过去7日滚动统计、同星期型历史均值等为特征变量\(\mathcal F_{d,0}
+=\left\{(L_{i,t},V_{i,t})\mid i<d\right\}\)(其中$i<d$严格遵循因果原则)，调用梯度提升回归函数 $f_L$、$f_V$ 预测日期$d$第$t$时段的负荷和光伏值（$\Theta_L$ 和 $\Theta_V$为模型训练集结果）：
+$$
+\widehat L_{d,t}=f_L(\mathbf x_{d,t};\Theta_L),\qquad
+\widehat V_{d,t}=f_V(\mathbf x_{d,t};\Theta_V),\qquad
+\Theta_L,\Theta_V=\operatorname{Train}(\mathcal F_{d,0}).
+$$
+历史预测残差为$$
+\varepsilon^L_{i,t}=L_{i,t}-\widehat L_{i,t},\qquad
+\varepsilon^V_{i,t}=V_{i,t}-\widehat V_{i,t}.
+$$
+
+为了让后续优化模型综合次日凌晨负荷和早间光伏变化趋势，以更合理调度跨日SOC，需要保留负荷与光伏相关性的可能偏差轨迹。我们从历史第$i$天和第$i+1$天截取一段包含当天24小时和次日12小时的联合残差，分别表示出负荷与光伏预测曲线上的可能偏差轨迹：
+$$
+\boldsymbol\varepsilon^L_i
+=\left(\varepsilon^L_{i,1:144},\varepsilon^L_{i+1,1:72}\right),\qquad
+\boldsymbol\varepsilon^V_i
+=\left(\varepsilon^V_{i,1:144},\varepsilon^V_{i+1,1:72}\right).
+$$
+
+我们定义净负荷为在小区负载需求除去光伏发力后的电量缺口：
+\begin{equation}
+  N_{d, t}^{\mathrm{A}}=L_{d, t}^{\mathrm{A}}-V_{d, t}^{\mathrm{A}},\quad
+  \label{eq:net-load}
+\end{equation}
+
+
+\subsubsection{负荷Kmeams聚类分析}
+
+上述历史可能偏差轨迹若直接用于优化模型计算会带来比较显著的不确定性，基于此，我们采用Kmeans聚类分析方法对历史偏差轨迹进行降维处理，将负荷、光伏和净负荷轨迹划分为6段，提取各段均值、标准差等统计量和平均绝对爬坡等特征轨迹特征向量 $\mathbf x_i$，
+$$
+\min_{\{\mathcal C_k,\boldsymbol\mu_k\}}
+\sum_{k=1}^{K}\sum_{i\in\mathcal C_k}
+w_{d,i}\left\|\mathbf x_i-\boldsymbol\mu_k\right\|_2^2.
+$$
+其中K为聚类数量，$\mathcal C_k$为第$k$类的样本集合，$\boldsymbol\mu_k$为第$k$个聚类的聚类中心，$w_{d,i}$为历史偏差轨迹$i$的权重。通过Kmeans聚类降维处理，获得各类中最接近聚类中心的偏差轨迹。
+
+
+如图\ref{fig:joint-error-scenarios}所示,我们将84条历史负荷—光伏联合偏差轨迹经聚类分析后形成8条真实聚类中心轨迹，得到6个负荷、光伏和净负荷的典型偏差轨迹，其中场景概率用线宽表示。正式期平均有效场景数为$4.94$，可见场景概率集中度处中等水平，没有退化为极端单场景或均匀场景。
+
+
+\begin{figure}[H]
   \centering
-  \includegraphics[width=0.74\textwidth]{example_result.pdf}
-  \caption{模型结果示例图（正式提交时替换）}
-  \label{fig:example-result}
+  \includegraphics[
+    width=0.9\textwidth,
+    height=0.5\textheight,
+    keepaspectratio
+  ]{figs/图1_联合误差块与代表场景.png}
+  \caption{Kmeans聚类分析得到的负荷、光伏和净负荷联合误差典型轨迹}
+  \label{fig:joint-error-scenarios}
 \end{figure}
 
-【结果分析示例】可以看出，随着【变量】增加，【指标】总体呈【上升/下降】趋势，并在【区间】附近趋于稳定。该规律与【实际机制】一致，说明模型能够较好地描述变量之间的关系。
+\subsection{两阶段随机规划模型建立}
 
-\subsection{问题二模型的建立与求解}
-【示例】在问题一基础上加入资源总量约束。若目标是最小化总成本，可写为
-\begin{equation}
-  \min_{\bm{x}} F(\bm{x})=\sum_{i=1}^{n} c_i x_i,
-  \quad
-  \text{s.t.}\quad
-  \begin{cases}
-    \sum_{i=1}^{n} a_i x_i \geq b,\\
-    0\leq x_i\leq u_i,\quad i=1,2,\ldots,n.
-  \end{cases}
-  \label{eq:q2-model}
-\end{equation}
-采用【线性规划/整数规划/遗传算法/粒子群算法】求解，得到最优目标值为【结果】，对应决策方案为【方案】。
+\subsubsection{决策变量和目标函数的确立}
 
-\subsection{问题三模型的建立与求解}
-【示例】针对更复杂情景，在前述模型上引入【随机扰动/多目标权衡/时序变化】。定义综合目标
+基于在0:00制定当天方案的不可更改性，综合考虑负荷-光伏的不确定性、SOC的跨日连续性和紧急购电费的风险性，我们建立两阶段随机规划模型。第一阶段作基于历史数据的0:00计划购电方案，决策变量$g_{d,h}$适用于当天所有场景，是非预见性的优化。第二阶段针对场景不确定性的追踪，决策变量是典型偏差场景$\omega$实现后储能设备充电量 $c_{d,\omega,h}$、储能设备放电量 $r_{d,\omega,h}$、紧急购电量 $e_{d,\omega,h}$、弃用量 $q_{d,\omega,h}$ 和储电量 $S_{d,\omega,h}$.
+
+
+偏差场景$\omega$下的紧急购电费用$
+C^{\mathrm{em}}_{d,\omega}
+=\sum_{h=1}^{216}5\rho_h e_{d,\omega,h}.
+$，我们使用CVaR条件风险价值对紧急购电费用的惩罚量化，在置信水平$\alpha$下，
+$$
+\operatorname{CVaR}_{\alpha}(C^{\mathrm{em}}_{d})
+=\zeta_d+\frac{1}{1-\alpha}
+\sum_{\omega=1}^{K}p_{d,\omega}\xi_{d,\omega},
+$$
+其中$\zeta_d$ 为损失阈值变量，$\xi_{d,\omega}$ 为超过阈值的正部变量。综合得到两阶段的目标函数为：
 \begin{equation}
-  J=\lambda F_1+(1-\lambda)F_2,
-  \label{eq:q3-model}
+\min \sum_{h=1}^{216}\rho_h g_{d,h}
++(1-\lambda)\sum_{\omega=1}^{K}p_{d,\omega}C^{\mathrm{em}}_{d,\omega}
++\lambda\operatorname{CVaR}_{0.90}(C^{\mathrm{em}}_{d})
++\epsilon R_d.
 \end{equation}
-其中 $\lambda\in[0,1]$ 表示不同目标之间的权衡系数。通过改变 $\lambda$，得到不同偏好下的候选方案，并结合实际需求给出最终推荐。
+其中$\epsilon R_d$仅用于消除零成本的退化解，保证优化的可行性。
+
+\subsubsection{约束分析和优化模型汇总}
+针对各场景和时段，式\ref{pingheng}在因果预测-风险损失的不确定性下，微网母线的供需平衡表现为：
+\begin{equation}
+g_{d,h}+r_{d,\omega,h}+e_{d,\omega,h}
+  =N_{d,\omega,h}+c_{d,\omega,h}+q_{d,\omega,h},\\[2mm]
+\end{equation}
+其余的储能设备ROC的逐日连续递推、安全波动范围、初始条件、充放电量及充放电效率、流式决策变量的非负性等约束可以参照\ref{eq:q1_model_system}修改得出，特别地，SOC当天末储量作为次日初状态也纳入约束中。综合汇总出如下优化模型：
+
+\begin{equation}
+\left\{
+\begin{aligned}
+\min Z_d
+&=
+\sum_{h=1}^{216}\rho_h g_{d,h}
++
+(1-\lambda)
+\sum_{\omega=1}^{K}
+p_{d,\omega}C^{\mathrm{em}}_{d,\omega}
++
+\lambda\operatorname{CVaR}_{0.90}
+\left(C^{\mathrm{em}}_{d}\right)
++
+\epsilon R_d,\\
+\quad\quad\mkern-8mu\mathrm{s.t.}\quad
+&g_{d,h}+r_{d,\omega,h}+e_{d,\omega,h}
+=
+N_{d,\omega,h}+c_{d,\omega,h}+q_{d,\omega,h},\\
+&S_{d,\omega,h+1}
+=
+S_{d,\omega,h}
++
+\eta_c c_{d,\omega,h}
+-
+\frac{r_{d,\omega,h}}{\eta_d},\\
+&0\le c_{d,\omega,h}\le833.3333,\\
+&0\le r_{d,\omega,h}\le833.3333,\\
+&\eta_c=\eta_d=0.9,\\
+&g_{d,h}\ge0,\qquad
+e_{d,\omega,h}\ge0,\qquad
+q_{d,\omega,h}\ge0,\\
+&1200\le S_{d,\omega,h}\le10800,\\
+&S_{d,\omega,1}=S_d^{\mathrm{init}},\\
+&S_{d,\omega,217}=6000.
+\end{aligned}
+\right.
+\label{eq:q2_stochastic_model}
+\end{equation}
+
+在两阶段随机规划求得的场景策略下，通过先验场景概率和后验距离更新概率$\widetilde p_{d,\omega,t}$，进行场景匹配追踪，逼近在真实历史路劲下的因果执行机制。其中下一时段目标SOC取场景SOC的加权中位数：$$
+S^{\mathrm{tar}}_{d,t+1}
+=\operatorname{WeightedMedian}
+\left(\{S_{d,\omega,t+1}\}_{\omega=1}^{K};\widetilde p_{d,\omega,t}\right).
+$$
+
+
+
+
+
+
+
+
+
+
+
+% 【示例】针对更复杂情景，在前述模型上引入【随机扰动/多目标权衡/时序变化】。定义综合目标
+% \begin{equation}
+%   J=\lambda F_1+(1-\lambda)F_2,
+%   \label{eq:q3-model}
+% \end{equation}
+% 其中 $\lambda\in[0,1]$ 表示不同目标之间的权衡系数。通过改变 $\lambda$，得到不同偏好下的候选方案，并结合实际需求给出最终推荐。
 
 % ============================================================
 % 七、模型检验与敏感性分析
