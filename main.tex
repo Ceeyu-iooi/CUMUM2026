@@ -410,7 +410,7 @@ $$
 
 \subsubsection{梯度提升回归预测和历史联合误差分析}
 
-建立预测模型时，为从源头上隔绝未来数据的泄露，我们以日内与年内正余弦、星期和周末、过去7日滚动统计、同星期型历史均值等为特征变量\(\mathcal F_{d,0}
+建立预测模型时，为从源头上隔绝未来数据的泄露，我们以负荷与光伏的日内与年内正余弦、星期和周末、过去7日滚动统计、同星期型历史均值等为特征变量\(\mathcal F_{d,0}
 =\left\{(L_{i,t},V_{i,t})\mid i<d\right\}\)(其中$i<d$严格遵循因果原则)，调用梯度提升回归函数 $f_L$、$f_V$ 预测日期$d$第$t$时段的负荷和光伏值（$\Theta_L$ 和 $\Theta_V$为模型训练集结果）：
 $$
 \widehat L_{d,t}=f_L(\mathbf x_{d,t};\Theta_L),\qquad
@@ -422,7 +422,7 @@ $$
 \varepsilon^V_{i,t}=V_{i,t}-\widehat V_{i,t}.
 $$
 
-为了让后续优化模型综合次日凌晨负荷和早间光伏变化趋势，以更合理调度跨日SOC，需要保留负荷与光伏相关性的可能偏差轨迹。我们从历史第$i$天和第$i+1$天截取一段包含当天24小时和次日12小时的联合残差，分别表示出负荷与光伏预测曲线上的可能偏差轨迹：
+为了让后续优化模型综合次日凌晨负荷和早间光伏变化趋势，以更合理调度跨日SOC，需要保留负荷与光伏相关性的可能偏差轨迹。我们从历史第$i$天和第$i+1$天截取一段包含当天24小时和次日12小时共216个时间段的联合残差，分别表示出负荷与光伏预测曲线上的可能偏差轨迹：
 $$
 \boldsymbol\varepsilon^L_i
 =\left(\varepsilon^L_{i,1:144},\varepsilon^L_{i+1,1:72}\right),\qquad
@@ -480,6 +480,7 @@ $$
 $$
 其中$\zeta_d$ 为损失阈值变量，$\xi_{d,\omega}$ 为超过阈值的正部变量。综合得到两阶段的目标函数为：
 \begin{equation}
+\label{q2model}
 \min \sum_{h=1}^{216}\rho_h g_{d,h}
 +(1-\lambda)\sum_{\omega=1}^{K}p_{d,\omega}C^{\mathrm{em}}_{d,\omega}
 +\lambda\operatorname{CVaR}_{0.90}(C^{\mathrm{em}}_{d})
@@ -493,7 +494,7 @@ $$
 g_{d,h}+r_{d,\omega,h}+e_{d,\omega,h}
   =N_{d,\omega,h}+c_{d,\omega,h}+q_{d,\omega,h},\\[2mm]
 \end{equation}
-其余的储能设备ROC的逐日连续递推、安全波动范围、初始条件、充放电量及充放电效率、流式决策变量的非负性等约束可以参照\ref{eq:q1_model_system}修改得出，特别地，SOC当天末储量作为次日初状态也纳入约束中。综合汇总出如下优化模型：
+其余的储能设备ROC的逐日连续递推、安全波动范围、初始条件、充放电量及充放电效率、流式决策变量的非负性等约束可以参照式\eqref{eq:q1_model_system}修改得出，特别地，SOC当天末储量作为次日初状态也纳入约束中。综合汇总出如下优化模型：
 
 \begin{equation}
 \left\{
@@ -543,13 +544,316 @@ $$
 
 
 
+\subsection{两阶段规划模型的求解}
+
+数据预处理中已经完成了对实际负载和光伏功率全年每日144时间段电量接口的建立，基于两阶段优化模型的具体求解步骤如下：
+
+Step1：数据初始化，完成全年每日按0:00的负荷和光伏因果点预测。
+
+Step2：从决策日前计算“当天24小时＋次日12小时”的负荷—光伏联合偏差，并通过Kmeans聚类分析获取最逼近历史真实的6个典型偏差场景。
+
+Setp3：分别以 $\lambda=0,0.10,0.25$ 求解216时段两阶段随机线性规划，得到共同计划购电和场景内储能追索。
+
+Step4： 执行当天每个时段依据近2小时已观测净负荷进行场景后验跟踪，更新加权中位目标SOC。
+
+Step5：以最小化目标函数作95\%非劣筛选,求出全年每日计划购电量、储能设备充放电量和SOC、紧急购电费，填入结果表格。
+
+如表\ref{Zhibiao}所示，求解得到总购电费为14,339,423.69元，其中计划购电费13,375,278.37元，占比93.28\%，紧急购电费为964,145.32 元，占比6.72\%。
+
+
+\begin{table}[htbp]
+\centering
+\caption{购电最优方案全年指标}
+\label{Zhibiao}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\setlength{\aboverulesep}{0.25ex}
+\setlength{\belowrulesep}{0.25ex}
+
+\begin{tabular}{@{}cccccc@{}}
+\toprule
+\textbf{指标} & \textbf{数值} 
+& \textbf{指标} & \textbf{数值} 
+& \textbf{指标} & \textbf{数值} \\
+\midrule
+
+计划购电量
+& 21,726,273.82 kWh
+& 计划购电费
+& 13,375,278.37 元
+& 紧急购电天数
+& 208.00 天 \\
+
+紧急购电量
+& 204,339.83 kWh
+& 紧急购电费
+& 964,145.32 元
+& 日费用 VaR95
+& 63,812.81 元 \\
+
+弃用量
+& 2,823,120.47 kWh
+& 总购电费
+& 14,339,423.69 元
+& 日费用 CVaR95
+& 68,306.35 元 \\
+
+\bottomrule
+\end{tabular}
+\end{table}
 
 
 
+\begin{figure}[H]
+  \centering
+
+  \begin{subfigure}[t]{0.49\textwidth}
+    \centering
+    \includegraphics[
+      width=\linewidth,
+      height=0.35\textheight,
+      keepaspectratio
+    ]{figs/图2\_年度紧急购电热谱.png}
+    \caption{年度紧急购电热谱}
+    \label{fig:q2-emergency-heatmap}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[t]{0.49\textwidth}
+    \centering
+    \includegraphics[
+      width=\linewidth,
+      height=0.35\textheight,
+      keepaspectratio
+    ]{figs/图7\_年度SOC运行热谱.png}
+    \caption{年度SOC运行热谱}
+    \label{fig:q2-soc-heatmap}
+  \end{subfigure}
+
+  \caption{年度紧急购电与SOC运行特征}
+  \label{fig:q2-emergency-soc}
+\end{figure}
 
 
 
+为进一步评估因果预测-偏差场景的随机规划效果，我们给出年度紧急购电热谱图\ref{fig:q2-emergency-heatmap},发生紧急购电的天数虽然有208天，而紧急购电量仅占计划购电量的0.94\%，多数日期仅在某些10分钟时段出现紧急购电,呈现多数的零散时段，分布可见紧急购电风险并非全年持续性预测偏差的供电不足，而是局部时段的电力缺口。
 
+图\ref{fig:q2-soc-heatmap}的年度SOC运行热谱显示，SOC在2018.55~10800.0000kWh之间运行，未触及1200 kWh下限，跨日末端平均储电量为8276.6083kWh，说明模型没有盲目放空储电量来换取末端低价，SOC跨日的连续性调度，降低了计划购电量。
+
+
+\begin{table}[htbp]
+\centering
+\caption{微网在指定时间段的购电量及全天的购电量和购电费}
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.50}
+\setlength{\aboverulesep}{0.40ex}
+\setlength{\belowrulesep}{0.40ex}
+
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}ccccccccc@{}}
+\toprule
+\textbf{\shortstack[c]{日期}}
+& \textbf{\shortstack[c]{10:00--10:10}}
+& \textbf{\shortstack[c]{12:00--12:10}}
+& \textbf{\shortstack[c]{14:00--14:10}}
+& \textbf{\shortstack[c]{16:00--16:10}}
+& \textbf{\shortstack[c]{18:00--18:10}}
+& \textbf{\shortstack[c]{20:00--20:10}}
+& \textbf{\shortstack[c]{全天计划\\购电量}}
+& \textbf{\shortstack[c]{全天总购电费\\/元}} \\
+\midrule
+
+2025-03-20
+& 0.00
+& 617.49
+& 0.00
+& 438.62
+& 721.43
+& 0.00
+& 61904.48
+& 41236.18 \\
+
+2025-06-21
+& 0.00
+& 0.00
+& 0.00
+& 133.01
+& 449.79
+& 0.00
+& 41385.22
+& 23319.36 \\
+
+2025-09-23
+& 0.00
+& 387.98
+& 0.00
+& 479.71
+& 805.65
+& 40.87
+& 66364.04
+& 44644.43 \\
+
+2025-12-21
+& 0.00
+& 1015.81
+& 0.00
+& 834.27
+& 763.85
+& 0.00
+& 98007.87
+& 63330.58 \\
+
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{储能设备在指定时间段的充放电量及 0:00 和 24:00 的储电量}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{@{}clrrcc@{}}
+\toprule
+\textbf{日期}
+& \textbf{时段}
+& \textbf{充电量}
+& \textbf{放电量}
+& \textbf{0:00储电量}
+& \textbf{24:00储电量} \\
+\midrule
+
+\multirow[t]{6}{*}{2025-03-20}
+& \makebox[2.8em][r]{0:00}-\makebox[2.8em][l]{4:00}
+& 1395.74 & 95.14
+& \multirow[t]{6}{*}{8892.45} & \multirow[t]{6}{*}{4448.44} \\
+& \makebox[2.8em][r]{4:00}-\makebox[2.8em][l]{8:00}
+& 945.58 & 5988.39 & & \\
+& \makebox[2.8em][r]{8:00}-\makebox[2.8em][l]{12:00}
+& 6281.39 & 2659.64 & & \\
+& \makebox[2.8em][r]{12:00}-\makebox[2.8em][l]{16:00}
+& 4605.30 & 254.72 & & \\
+& \makebox[2.8em][r]{16:00}-\makebox[2.8em][l]{20:00}
+& 10.03 & 5667.29 & & \\
+& \makebox[2.8em][r]{20:00}-\makebox[2.8em][l]{24:00}
+& 3729.81 & 3078.38 & & \\
+\addlinespace[0.25ex]
+
+\multirow[t]{6}{*}{2025-06-21}
+& \makebox[2.8em][r]{0:00}-\makebox[2.8em][l]{4:00}
+& 676.76 & 73.43
+& \multirow[t]{6}{*}{4827.74} & \multirow[t]{6}{*}{10278.44} \\
+& \makebox[2.8em][r]{4:00}-\makebox[2.8em][l]{8:00}
+& 495.35 & 2628.56 & & \\
+& \makebox[2.8em][r]{8:00}-\makebox[2.8em][l]{12:00}
+& 8799.53 & 0.00 & & \\
+& \makebox[2.8em][r]{12:00}-\makebox[2.8em][l]{16:00}
+& 0.00 & 0.00 & & \\
+& \makebox[2.8em][r]{16:00}-\makebox[2.8em][l]{20:00}
+& 154.47 & 5263.85 & & \\
+& \makebox[2.8em][r]{20:00}-\makebox[2.8em][l]{24:00}
+& 8833.61 & 2485.90 & & \\
+\addlinespace[0.25ex]
+
+\multirow[t]{6}{*}{2025-09-23}
+& \makebox[2.8em][r]{0:00}-\makebox[2.8em][l]{4:00}
+& 1480.94 & 82.24
+& \multirow[t]{6}{*}{8752.22} & \multirow[t]{6}{*}{9092.58} \\
+& \makebox[2.8em][r]{4:00}-\makebox[2.8em][l]{8:00}
+& 976.97 & 6380.66 & & \\
+& \makebox[2.8em][r]{8:00}-\makebox[2.8em][l]{12:00}
+& 4161.77 & 1896.62 & & \\
+& \makebox[2.8em][r]{12:00}-\makebox[2.8em][l]{16:00}
+& 5655.06 & 62.33 & & \\
+& \makebox[2.8em][r]{16:00}-\makebox[2.8em][l]{20:00}
+& 397.90 & 5421.73 & & \\
+& \makebox[2.8em][r]{20:00}-\makebox[2.8em][l]{24:00}
+& 8294.39 & 2833.40 & & \\
+\addlinespace[0.25ex]
+
+\multirow[t]{6}{*}{2025-12-21}
+& \makebox[2.8em][r]{0:00}-\makebox[2.8em][l]{4:00}
+& 1410.27 & 188.54
+& \multirow[t]{6}{*}{9582.89} & \multirow[t]{6}{*}{9647.58} \\
+& \makebox[2.8em][r]{4:00}-\makebox[2.8em][l]{8:00}
+& 1071.81 & 1558.17 & & \\
+& \makebox[2.8em][r]{8:00}-\makebox[2.8em][l]{12:00}
+& 5527.18 & 7263.78 & & \\
+& \makebox[2.8em][r]{12:00}-\makebox[2.8em][l]{16:00}
+& 7208.01 & 2220.10 & & \\
+& \makebox[2.8em][r]{16:00}-\makebox[2.8em][l]{20:00}
+& 28.22 & 5316.81 & & \\
+& \makebox[2.8em][r]{20:00}-\makebox[2.8em][l]{24:00}
+& 8764.57 & 2842.53 & & \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{微网在指定日期的紧急购电量}
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lclclc@{}}
+\toprule
+\textbf{日期}
+& \textbf{紧急购电时段}
+& \textbf{紧急购电量}
+& \textbf{日期}
+& \textbf{紧急购电时段}
+& \textbf{紧急购电量} \\
+\midrule
+
+2025-03-20 & 1:20--2:00   & 85.45
+& 2025-03-20 & 18:20--18:30 & 1.64 \\
+
+2025-03-20 & 2:40--3:00   & 10.37
+& 2025-03-20 & 18:50--19:20 & 76.25 \\
+
+2025-03-20 & 3:10--4:10   & 176.04
+& 2025-06-21 & 无           & 0.00 \\
+
+2025-03-20 & 5:20--5:30   & 16.10
+& 2025-09-23 & 14:30--15:10 & 449.76 \\
+
+2025-03-20 & 5:50--6:20   & 16.69
+& 2025-09-23 & 15:20--15:40 & 28.44 \\
+
+2025-03-20 & 9:30--10:10  & 117.74
+& 2025-09-23 & 16:00--16:20 & 73.07 \\
+
+2025-03-20 & 15:30--16:30 & 251.74
+& 2025-09-23 & 20:30--20:40 & 2.80 \\
+
+2025-03-20 & 16:40--17:30 & 72.96
+& 2025-12-21 & 无           & 0.00 \\
+
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
+\subsection{风险权重灵敏度分析}
+为评估CVaR条件风险价值的稳定性，我们对式\eqref{q2model}的权重 $\lambda$作0、0.10、0.25的灵敏度分析。两阶段纯随机规划的风险权重下计划购电费-紧急费用前沿如图\ref{fig:CVaR}。当 $\lambda$ 从0提高到0.10时，计划购电费增加3.67\%，但紧急购电量下降33.91\%，紧急购电天数减少26.12\%，总购电费下降1.02\%。
+当 $\lambda$ 提高到0.25时，紧急购电量较 $\lambda=0.10$ 进一步下降33.39\%，紧急购电天数减少10.50\%，但计划购电费上升4.39\%，使总购电费回升1.39\%。与 $\lambda=0$ 相比，$\lambda=0.25$ 的总购电费反而提升0.36\%，说明CVaR风险保护并非越强越好，风险权重$\lambda$有经济性—风险性的折中考虑。
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[
+    width=0.8\textwidth,
+    height=0.5\textheight,
+    keepaspectratio
+  ]{figs/图3_CVaR风险费用前沿.png}
+  \caption{CVaR风险权重下费用前沿}
+  \label{fig:CVaR}
+\end{figure}
 
 % 【示例】针对更复杂情景，在前述模型上引入【随机扰动/多目标权衡/时序变化】。定义综合目标
 % \begin{equation}
